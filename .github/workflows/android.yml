@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. تحميل ملفات المشروع
+      # 1. تحميل المستودع
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -21,48 +21,62 @@ jobs:
         with:
           node-version: 20
 
-      # 3. استخراج ملفات التطبيق
+      # 3. إعداد Java
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # 4. استخراج ملفات المشروع
       - name: Extract source ZIP
         run: |
           unzip -o STUDYFLOW-Pro-Source.zip -d source
           cp -a source/. .
 
-      # 4. تثبيت المكتبات
+      # 5. تثبيت المكتبات
       - name: Install dependencies
         run: npm install
 
-      # 5. بناء نسخة الويب
+      # 6. بناء تطبيق الويب
       - name: Build web app
         run: npm run build
 
-      # 6. إعداد Android SDK
+      # 7. إعداد Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ''
 
-      # 7. تثبيت أدوات Android المطلوبة
+      # 8. تثبيت أدوات Android
       - name: Install Android SDK packages
         run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
-      # 8. إضافة مشروع Android
+      # 9. إضافة منصة Android
       - name: Add Android platform
         run: npx cap add android
 
-      # 9. مزامنة Capacitor
+      # 10. مزامنة Capacitor
       - name: Sync Capacitor
         run: npx cap sync android
 
-      # 10. بناء APK
+      # 11. بناء APK
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # 11. رفع APK كملف قابل للتنزيل
+      # 12. رفع APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: STUDYFLOW-Pro-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 7
