@@ -1,4 +1,3 @@
-
 name: Build STUDYFLOW Android APK
 
 on:
@@ -12,43 +11,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. تحميل ملفات المشروع
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. إعداد Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 3. استخراج ملفات التطبيق
       - name: Extract source ZIP
         run: |
           unzip -o STUDYFLOW-Pro-Source.zip -d source
           cp -a source/. .
 
+      # 4. تثبيت المكتبات
       - name: Install dependencies
         run: npm install
 
+      # 5. بناء نسخة الويب
       - name: Build web app
         run: npm run build
 
+      # 6. إعداد Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # 7. تثبيت أدوات Android المطلوبة
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      # 8. إضافة مشروع Android
       - name: Add Android platform
         run: npx cap add android
 
+      # 9. مزامنة Capacitor
       - name: Sync Capacitor
         run: npx cap sync android
 
+      # 10. بناء APK
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
+      # 11. رفع APK كملف قابل للتنزيل
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: STUDYFLOW-Pro-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
+          if-no-files-found: error
